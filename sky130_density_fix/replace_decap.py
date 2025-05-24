@@ -74,7 +74,7 @@ for inst in top_cell.each_inst():
         assert cell_dimensions_equal(inst.cell, replacement_cell)
         matches += 1
 
-        if random() < probability:
+        if random() >= probability:
             continue
 
         inst.cell = replacement_cell
