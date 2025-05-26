@@ -76,7 +76,7 @@ jobs:
     env:
       USER_ID: 5454
       PROJECT: caravel_openframe
-      KLAYOUT_VERSION: 0.29.7
+      KLAYOUT_VERSION: 0.29.11
       MAGIC_VERSION: 8.3.471
       PDK_ROOT: ${{ github.workspace }}/pdk
       SKY130_PDK_VERSION: 0fe599b2afb6708d281543108caf8310912f54af
@@ -101,7 +101,7 @@ jobs:
 
       - name: Install KLayout
         run: |
-          wget https://www.klayout.org/downloads/Ubuntu-24/klayout_${KLAYOUT_VERSION}-1_amd64.deb
+          wget https://github.com/TinyTapeout/klayout/releases/download/v${KLAYOUT_VERSION}/klayout_${KLAYOUT_VERSION}-1_amd64.deb
           sudo apt-get update
           sudo apt-get install -y ./klayout_${KLAYOUT_VERSION}-1_amd64.deb
           pip install klayout==${KLAYOUT_VERSION}
