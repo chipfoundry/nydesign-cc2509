@@ -1,6 +1,6 @@
-id: 'tt10'
-name: 'Tiny Tapeout 10'
-end_date: '2025-03-10'
+id: 'ttcad25a'
+name: 'Tiny Tapeout CAD 25a'
+end_date: '2025-05-27'
 project_dir: 'projects'
 top_level_macro: 'openframe_project_wrapper'
 powered_netlists: true
