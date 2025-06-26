@@ -27,7 +27,7 @@ jobs:
       - name: Checkout Precheck Repo
         uses: actions/checkout@v4
         with:
-          repository: efabless/mpw_precheck
+          repository: chipfoundry/mpw_precheck
           path: mpw_precheck
 
       - name: Install Sky130 PDK
@@ -44,7 +44,7 @@ jobs:
           workflow: gds.yaml
           run_id: ${{ github.event.workflow_run.id }}
           workflow_conclusion: success
-          name: efabless_submission
+          name: chipfoundry_submission
           path: tinytapeout-submission
 
       - name: Run precheck (run id = ${{ fromJSON(steps.download_artifact.outputs.artifacts)[0].workflow_run.id }})
@@ -55,13 +55,15 @@ jobs:
             -e INPUT_DIRECTORY="$INPUT_DIRECTORY" -e PDK_PATH="$PDK_PATH" -e PDK_ROOT="$PDK_ROOT" \
             -u $(id -u "$USER"):$(id -g "$USER") \
             -w /opt/mpw_precheck \
-            efabless/mpw_precheck:latest ./run_precheck.sh --private --skip_checks $SKIP_CHECKS
+            chipfoundry/mpw_precheck:latest ./run_precheck.sh --private --skip_checks $SKIP_CHECKS
         env:
           # magic_drc - it's slow and we're already running it in the gds job
           # lvs - slow, currently failing (GL netlist doesn't include user modules), and we're already doing LVS in the gds job
+          # makefile - we're not using the Makefile in the submission, so we can skip it
           SKIP_CHECKS: |
             magic_drc 
             lvs
+            makefile
           PDK_PATH: ${{ env.PDK_ROOT }}/sky130A
           INPUT_DIRECTORY: ${{ github.workspace }}/tinytapeout-submission
 
@@ -78,6 +80,7 @@ jobs:
       PROJECT: caravel_openframe
       KLAYOUT_VERSION: 0.29.11
       MAGIC_VERSION: 8.3.471
+      PDK: sky130A
       PDK_ROOT: ${{ github.workspace }}/pdk
       SKY130_PDK_VERSION: 0fe599b2afb6708d281543108caf8310912f54af
       CARAVEL_ROOT: ${{ github.workspace }}/caravel
@@ -96,7 +99,7 @@ jobs:
       - name: Checkout Caravel
         uses: actions/checkout@v4
         with:
-          repository: efabless/caravel
+          repository: chipfoundry/caravel
           path: ${{ env.CARAVEL_ROOT }}
 
       - name: Install KLayout
@@ -129,7 +132,7 @@ jobs:
           workflow: gds.yaml
           run_id: ${{ github.event.workflow_run.id }}
           workflow_conclusion: success
-          name: efabless_submission
+          name: chipfoundry_submission
           path: tinytapeout-submission
 
       - name: Create final .oas file

@@ -123,11 +123,11 @@ jobs:
       - name: Copy final results
         run: python ./tt/configure.py --copy-final-results
 
-      - name: Create eFabless submission
-        run: python ./tt/configure.py --create-efabless-submission
+      - name: Create chipfoundry submission
+        run: python ./tt/configure.py --create-chipfoundry-submission
 
       - name: Patch GL power pin assignments
-        run: sed -i 's/^ assign \(v[a-z0-9]*\) = \(v[a-z]*\);$/ assign \1 = \2; assign \2 = \1;/' efabless/verilog/gl/openframe_project_wrapper.v
+        run: sed -i 's/^ assign \(v[a-z0-9]*\) = \(v[a-z]*\);$/ assign \1 = \2; assign \2 = \1;/' chipfoundry/verilog/gl/openframe_project_wrapper.v
 
       - name: upload GDS artifact
         if: success() || failure()
@@ -157,11 +157,11 @@ jobs:
           name: shuttle_index
           path: shuttle_index.json
 
-      - name: upload Efabless submission directory
+      - name: upload ChipFoundry submission directory
         uses: actions/upload-artifact@v4
         with:
-          name: efabless_submission
-          path: efabless
+          name: chipfoundry_submission
+          path: chipfoundry
 
       # Install iverilog, cocotb (required for GL test)
       - name: install oss-cad-suite
