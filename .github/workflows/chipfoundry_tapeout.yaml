@@ -1,0 +1,68 @@
+name: chipfoundry_tapeout
+
+on:
+  workflow_dispatch:
+
+jobs:
+  chipfoundry_tapeout:
+    env:
+      CHIPFOUNDRY_PROJECT_NAME: ${{ vars.CHIPFOUNDRY_PROJECT_NAME }}
+      CHIPFOUNDRY_SFTP_USERNAME: ${{ vars.CHIPFOUNDRY_SFTP_USERNAME }}
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Download artifact
+        uses: dawidd6/action-download-artifact@v6
+        id: download_artifact
+        with:
+          workflow: gds.yaml
+          workflow_conclusion: success
+          name: chipfoundry_submission
+          path: tinytapeout_submission
+
+      - name: Print Tapeout Information
+        run: |
+          echo "Commit: $WORKFLOW_HEAD_SHA"
+          echo "Workflow URL: $WORKFLOW_URL"
+          echo "--------------------------------"
+
+          echo '## Tapeout data' >> $GITHUB_STEP_SUMMARY
+          echo "* Commit: $WORKFLOW_HEAD_SHA" >> $GITHUB_STEP_SUMMARY
+          echo "* Workflow URL: $WORKFLOW_URL" >> $GITHUB_STEP_SUMMARY
+          echo '' >> $GITHUB_STEP_SUMMARY
+        env:
+          WORKFLOW_URL: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ fromJSON(steps.download_artifact.outputs.artifacts)[0].workflow_run.id }}'
+          WORKFLOW_HEAD_SHA: '${{ fromJSON(steps.download_artifact.outputs.artifacts)[0].workflow_run.head_sha }}'
+
+      - name: Configure keys
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/chipfoundry-key
+          chmod 600 ~/.ssh/chipfoundry-key
+        env:
+          # To generate a new key: ssh-keygen -o -t ed25519 -C "bot@tinytapeout.com"
+          SSH_KEY: ${{ secrets.CHIPFOUNDRY_SFTP_SSH_KEY }}
+
+      - name: Install the ChipFoundry CLI
+        run: pip install chipfoundry-cli
+
+      - name: Push the project to ChipFoundry
+        run: |
+          cf push \
+            --project-root tinytapeout_submission \
+            --project-name $CHIPFOUNDRY_PROJECT_NAME \
+            --sftp-username $CHIPFOUNDRY_SFTP_USERNAME \
+            --project-type openframe \
+            --force-overwrite
+
+          echo '## ChipFoundry submission' >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          cat tinytapeout_submission/.cf/project.json | tee -a $GITHUB_STEP_SUMMARY
+          echo '' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo '' >> $GITHUB_STEP_SUMMARY
+
+      - name: Print ChipFoundry status
+        run: |
+          echo '## ChipFoundry status' >> $GITHUB_STEP_SUMMARY
+          cf status --sftp-username $CHIPFOUNDRY_SFTP_USERNAME | tee $GITHUB_STEP_SUMMARY
