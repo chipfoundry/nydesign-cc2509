@@ -65,4 +65,4 @@ jobs:
       - name: Print ChipFoundry status
         run: |
           echo '## ChipFoundry status' >> $GITHUB_STEP_SUMMARY
-          cf status --sftp-username $CHIPFOUNDRY_SFTP_USERNAME | tee $GITHUB_STEP_SUMMARY
+          cf status --sftp-username $CHIPFOUNDRY_SFTP_USERNAME | tee -a $GITHUB_STEP_SUMMARY
