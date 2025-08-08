@@ -6,5 +6,5 @@
 #
 cocotb==1.9.2
     # via tt-mux (pyproject.toml)
-find-libpython==0.4.0
+find-libpython==0.4.1
     # via cocotb
