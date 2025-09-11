@@ -88,15 +88,7 @@ jobs:
             if [[ "$(jq -r '.openlane_version' $project/commit_id.json)" != "OpenLane2 2"* ]]; then
               continue
             fi
-
-            if [ -f $project/$project.gds.br ]; then
-              brotli -jd $project/$project.gds.br
-            fi
             
-            if [ -f $project/$project.gds ]; then
-              python ../sky130_density_fix/replace_decap.py --design $project --user-gds $project/$project.gds --replacement-gds ../sky130_density_fix/sky130_ef_sc_hd__newfill_12.gds -p 0.57 | tee -a ../tt-multiplexer/ol2/tt_top/gds/replace_decap.log
-            fi
-
             if [ -f $project/$project.oas ]; then
               python ../sky130_density_fix/replace_decap.py --design $project --user-gds $project/$project.oas --replacement-gds ../sky130_density_fix/sky130_ef_sc_hd__newfill_12.gds -p 0.57 | tee -a ../tt-multiplexer/ol2/tt_top/gds/replace_decap.log
             fi
