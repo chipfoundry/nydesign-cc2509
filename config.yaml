@@ -1,5 +1,5 @@
-id: 'ttsky25b'
-name: 'Tiny Tapeout SKY 25b'
+id: 'nydesign-cc2509a'
+name: 'NYDesign Tiny Tapeout'
 pdk: 'sky130A'
 end_date: '2025-11-10'
 project_dir: 'projects'
