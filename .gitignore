@@ -3,8 +3,6 @@ verilog/includes/rom_tile.vmem
 venv/
 sta.log
 
-datasheet.md
-datasheet.pdf
 shuttle_index.json
 shuttle_index.md
 
@@ -22,3 +20,5 @@ ihp/
 
 # pip-compile
 *.egg-info
+
+.venv/
