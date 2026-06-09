@@ -32,13 +32,13 @@ function Resolve-Mpremote {
 function Invoke-Mpremote {
   param(
     [hashtable]$Mpremote,
-    [string[]]$Args,
+    [string[]]$CommandArgs,
     [switch]$IgnoreErrors
   )
 
   $allArgs = @()
   $allArgs += $Mpremote.baseArgs
-  $allArgs += $Args
+  $allArgs += $CommandArgs
 
   $cmdPreview = @($Mpremote.exe) + $allArgs
   Write-Host ("[mpremote] " + ($cmdPreview -join " ")) -ForegroundColor DarkCyan
@@ -51,7 +51,7 @@ function Invoke-Mpremote {
   }
 
   if ($exitCode -ne 0) {
-    $argString = ($Args -join " ")
+    $argString = ($CommandArgs -join " ")
     if ($IgnoreErrors) {
       Write-Host "Ignoring mpremote exit code $exitCode for: $argString" -ForegroundColor Yellow
       return $false
@@ -92,7 +92,7 @@ if ($Port -eq "auto") {
   Write-Host "Warning: -Port auto may select different devices if multiple serial targets are present." -ForegroundColor Yellow
   Write-Host "Recommended: provide explicit -Port COMx for production provisioning." -ForegroundColor Yellow
   $mp = Resolve-Mpremote
-  Invoke-Mpremote -Mpremote $mp -Args @("connect", "list")
+  Invoke-Mpremote -Mpremote $mp -CommandArgs @("connect", "list")
 }
 
 if (-not $SkipFlash) {
@@ -121,17 +121,17 @@ Write-Host "Step 2/2: Copy shuttle index via mpremote" -ForegroundColor Cyan
 $mp = Resolve-Mpremote
 Write-Host "Start copy" -ForegroundColor Cyan
 
-Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "fs", "cp", $indexPathForMpremote, $remoteTarget)
+Invoke-Mpremote -Mpremote $mp -CommandArgs @("connect", $Port, "fs", "cp", $indexPathForMpremote, $remoteTarget)
 Write-Host "Copy finshed" -ForegroundColor Cyan
-Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "fs", "ls", ":/shuttles")
+Invoke-Mpremote -Mpremote $mp -CommandArgs @("connect", $Port, "fs", "ls", ":/shuttles")
 Write-Host "List finshed" -ForegroundColor Cyan
-Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "exec", "import os; assert '$targetName' in os.listdir('/shuttles'); print('exists:', True)")
+Invoke-Mpremote -Mpremote $mp -CommandArgs @("connect", $Port, "exec", "import os; assert '$targetName' in os.listdir('/shuttles'); print('exists:', True)")
 Write-Host "Running post-copy verification sequence..." -ForegroundColor Cyan
-Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "exec", "from ttboard.demoboard import DemoBoard; tt=DemoBoard.get(); print('detected_shuttle:', tt.shuttle.run)")
+Invoke-Mpremote -Mpremote $mp -CommandArgs @("connect", $Port, "exec", "from ttboard.demoboard import DemoBoard; tt=DemoBoard.get(); print('detected_shuttle:', tt.shuttle.run)")
 
 if (-not $SkipFactoryCheck) {
   Write-Host "Running factory counter final check..." -ForegroundColor Cyan
-  Invoke-Mpremote -Mpremote $mp -Args @(
+  Invoke-Mpremote -Mpremote $mp -CommandArgs @(
     "connect",
     $Port,
     "exec",
