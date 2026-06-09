@@ -60,6 +60,28 @@ function Invoke-Mpremote {
   return $true
 }
 
+function Wait-ForBoardReady {
+  param(
+    [hashtable]$Mpremote,
+    [string]$PortName,
+    [int]$TimeoutSeconds = 45
+  )
+
+  $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+  Write-Host "Waiting for board serial interface to become ready..." -ForegroundColor Cyan
+
+  while ((Get-Date) -lt $deadline) {
+    $ok = Invoke-Mpremote -Mpremote $Mpremote -CommandArgs @("connect", $PortName, "exec", "print('ready')") -IgnoreErrors
+    if ($ok) {
+      Write-Host "Board is ready for mpremote commands." -ForegroundColor Green
+      return
+    }
+    Start-Sleep -Seconds 2
+  }
+
+  throw "Board did not become ready within $TimeoutSeconds seconds on port '$PortName'."
+}
+
 if (-not (Test-Path -LiteralPath $Uf2)) {
   throw "UF2 file not found: $Uf2"
 }
@@ -112,6 +134,8 @@ if ($Port -eq "auto") {
   Invoke-Mpremote -Mpremote $mp -CommandArgs @("connect", "list")
 }
 
+$mp = Resolve-Mpremote
+
 if (-not $SkipFlash) {
   Write-Host "Step 1/2: Flash UF2 to board" -ForegroundColor Cyan
   Write-Host "Put the RP2040 board in BOOTSEL mode so it mounts as RPI-RP2." -ForegroundColor Cyan
@@ -128,14 +152,13 @@ if (-not $SkipFlash) {
   Write-Host "Copying UF2 to $driveRoot ..." -ForegroundColor Cyan
   Copy-Item -LiteralPath $uf2Path -Destination $driveRoot -Force
 
-  Write-Host "UF2 copied. Waiting for board to reboot..." -ForegroundColor Cyan
-  Start-Sleep -Seconds 6
+  Write-Host "UF2 copied. Waiting for board to reboot and reconnect..." -ForegroundColor Cyan
+  Wait-ForBoardReady -Mpremote $mp -PortName $Port
 } else {
   Write-Host "Skipping UF2 flash (--SkipFlash)." -ForegroundColor Yellow
 }
 
 Write-Host "Step 2/2: Copy shuttle index via mpremote" -ForegroundColor Cyan
-$mp = Resolve-Mpremote
 
 if ($copyBinFirst) {
   Write-Host "Serialized index found, copying .json.bin first (preferred)." -ForegroundColor Cyan
