@@ -69,6 +69,21 @@ if (-not (Test-Path -LiteralPath $IndexJson)) {
 $uf2Path = (Resolve-Path -LiteralPath $Uf2).Path
 $indexPath = (Resolve-Path -LiteralPath $IndexJson).Path
 $targetName = "$ShuttleId.json"
+$remoteTarget = (":/shuttles/$targetName" -replace '\\', '/')
+$cleanupTempIndex = $false
+$indexPathForMpremote = $IndexJson
+
+# mpremote path parsing treats ":" specially for remote paths. On Windows,
+# absolute paths like C:\... can confuse fs cp. Use a local relative path.
+if ($indexPathForMpremote -match '^[A-Za-z]:\\') {
+  $leaf = [System.IO.Path]::GetFileName($indexPath)
+  $indexPathForMpremote = ".\$leaf"
+  $leafAbs = (Join-Path (Get-Location) $leaf)
+  if (-not (Test-Path -LiteralPath $leafAbs) -or ((Resolve-Path -LiteralPath $leafAbs).Path -ne $indexPath)) {
+    Copy-Item -LiteralPath $indexPath -Destination $leafAbs -Force
+    $cleanupTempIndex = $true
+  }
+}
 
 if ($Port -eq "auto") {
   Write-Host "Warning: -Port auto may select different devices if multiple serial targets are present." -ForegroundColor Yellow
@@ -103,7 +118,7 @@ Write-Host "Step 2/2: Copy shuttle index via mpremote" -ForegroundColor Cyan
 $mp = Resolve-Mpremote
 
 Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "fs", "mkdir", ":/shuttles") -IgnoreErrors
-Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "fs", "cp", $indexPath, ":/shuttles/$targetName")
+Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "fs", "cp", $indexPathForMpremote, $remoteTarget)
 Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "fs", "ls", ":/shuttles")
 Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "exec", "import os; assert '$targetName' in os.listdir('/shuttles'); print('exists:', True)")
 Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "reset")
@@ -127,4 +142,8 @@ if (-not $SkipFactoryCheck) {
 
 Write-Host "Provisioning complete." -ForegroundColor Green
 Write-Host "UF2: $uf2Path"
-Write-Host "Index: $indexPath -> :/shuttles/$targetName"
+Write-Host "Index: $indexPath -> $remoteTarget"
+
+if ($cleanupTempIndex) {
+  Remove-Item -LiteralPath $indexPathForMpremote -Force -ErrorAction SilentlyContinue
+}
