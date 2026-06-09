@@ -126,6 +126,15 @@ dump_state()
 
 Expected: no shuttle index error; design selection works.
 
+### 4) Verify in tt-commander-app UI
+
+1. Open your deployed Commander URL and click **Connect to Board**.
+2. Confirm the **Project** dropdown shows the expected project titles for this shuttle.
+3. Select address `1` (Factory Test), click **Select**, and verify no error appears in logs.
+4. Confirm **Repo** opens the expected project repository page.
+5. Optional smoke check:
+   - set `rst_n=0`, set `ui_in=0xA5`, verify `uo_out=0xA5` (factory mirror mode).
+
 ## Factory test quick sanity (optional)
 
 After selecting address `1` (factory test), verify:
