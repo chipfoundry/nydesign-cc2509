@@ -92,6 +92,11 @@ Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "fs", "ls", ":/shuttles"
 Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "exec", "import os; print('exists:', '$targetName' in os.listdir('/shuttles'))")
 Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "reset")
 
+Write-Host "Running post-reset verification sequence..." -ForegroundColor Cyan
+Start-Sleep -Seconds 2
+Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "exec", "import os; print('post_reset_exists:', '$targetName' in os.listdir('/shuttles'))")
+Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "exec", "from ttboard.demoboard import DemoBoard; tt=DemoBoard.get(); print('detected_shuttle:', tt.shuttle.run)")
+
 Write-Host "Provisioning complete." -ForegroundColor Green
 Write-Host "UF2: $uf2Path"
 Write-Host "Index: $indexPath -> :/shuttles/$targetName"
