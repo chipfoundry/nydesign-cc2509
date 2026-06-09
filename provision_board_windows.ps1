@@ -116,6 +116,7 @@ if (-not $SkipFlash) {
 
 Write-Host "Step 2/2: Copy shuttle index via mpremote" -ForegroundColor Cyan
 $mp = Resolve-Mpremote
+Write-Host "Start copy" -ForegroundColor Cyan
 
 Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "fs", "cp", $indexPathForMpremote, $remoteTarget)
 Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "fs", "ls", ":/shuttles")
