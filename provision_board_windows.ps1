@@ -119,6 +119,7 @@ $mp = Resolve-Mpremote
 
 Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "fs", "cp", $indexPathForMpremote, $remoteTarget)
 Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "fs", "ls", ":/shuttles")
+Write-Host "Copy finshed" -ForegroundColor Cyan
 Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "exec", "import os; assert '$targetName' in os.listdir('/shuttles'); print('exists:', True)")
 Write-Host "Running post-copy verification sequence..." -ForegroundColor Cyan
 Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "exec", "from ttboard.demoboard import DemoBoard; tt=DemoBoard.get(); print('detected_shuttle:', tt.shuttle.run)")
