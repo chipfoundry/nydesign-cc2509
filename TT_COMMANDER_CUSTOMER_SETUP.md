@@ -77,6 +77,22 @@ mpremote connect "/dev/cu.usbmodem3101" reset
 
 If `mkdir` reports it already exists, continue.
 
+### Windows one-step script
+
+Use the PowerShell script in this repo to flash UF2 and copy the shuttle index:
+
+```powershell
+.\provision_board_windows.ps1
+```
+
+Optional parameters:
+
+```powershell
+.\provision_board_windows.ps1 -Port COM5
+.\provision_board_windows.ps1 -SkipFlash
+.\provision_board_windows.ps1 -IndexJson .\my_index.json -ShuttleId ci2511
+```
+
 ## Verify provisioning
 
 ### 1) Verify file persistence
