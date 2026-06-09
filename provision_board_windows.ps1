@@ -41,9 +41,6 @@ function Invoke-Mpremote {
   $allArgs += $Mpremote.baseArgs
   $allArgs += $CommandArgs
 
-  $cmdPreview = @($Mpremote.exe) + $allArgs
-  Write-Host ("[mpremote] " + ($cmdPreview -join " ")) -ForegroundColor DarkCyan
-
   & $Mpremote.exe @allArgs | Out-Host
   $exitCode = $LASTEXITCODE
 
@@ -139,18 +136,14 @@ if (-not $SkipFlash) {
 
 Write-Host "Step 2/2: Copy shuttle index via mpremote" -ForegroundColor Cyan
 $mp = Resolve-Mpremote
-Write-Host "Start copy" -ForegroundColor Cyan
 
 if ($copyBinFirst) {
   Write-Host "Serialized index found, copying .json.bin first (preferred)." -ForegroundColor Cyan
   Invoke-Mpremote -Mpremote $mp -CommandArgs @("connect", $Port, "fs", "cp", $indexBinPathForMpremote, $remoteTargetBin)
-  Write-Host "Binary copy finshed" -ForegroundColor Cyan
 }
 
 Invoke-Mpremote -Mpremote $mp -CommandArgs @("connect", $Port, "fs", "cp", $indexPathForMpremote, $remoteTarget)
-Write-Host "Copy finshed" -ForegroundColor Cyan
 Invoke-Mpremote -Mpremote $mp -CommandArgs @("connect", $Port, "fs", "ls", ":/shuttles")
-Write-Host "List finshed" -ForegroundColor Cyan
 if ($copyBinFirst) {
   Invoke-Mpremote -Mpremote $mp -CommandArgs @("connect", $Port, "exec", "import os; assert '$targetName.bin' in os.listdir('/shuttles'); print('bin_exists:', True)")
 }
