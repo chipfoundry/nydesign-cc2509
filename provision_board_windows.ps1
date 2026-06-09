@@ -4,7 +4,8 @@ param(
   [string]$ShuttleId = "ttsky25b",
   [string]$Port = "auto",
   [switch]$SkipFlash,
-  [switch]$SkipFactoryCheck
+  [switch]$SkipFactoryCheck,
+  [switch]$ConfigureFactoryMode3
 )
 
 Set-StrictMode -Version Latest
@@ -167,6 +168,16 @@ if (-not $SkipFactoryCheck) {
   )
 } else {
   Write-Host "Skipping factory counter final check (--SkipFactoryCheck)." -ForegroundColor Yellow
+}
+
+if ($ConfigureFactoryMode3) {
+  Write-Host "Configuring Factory Test mode 3 (counter) for manual verification..." -ForegroundColor Cyan
+  Invoke-Mpremote -Mpremote $mp -CommandArgs @(
+    "connect",
+    $Port,
+    "exec",
+    "from ttboard.demoboard import DemoBoard; from ttboard.mode import RPMode; import ttboard.util.platform as p; tt=DemoBoard.get(); tt.mode=RPMode.ASIC_RP_CONTROL; tt.shuttle.reset_and_clock_mux(1); tt.clock_project_stop(); p.write_ui_in_byte(0x01); tt.reset_project(False); print('factory_mode3_configured: PASS')"
+  )
 }
 
 Write-Host "Provisioning complete." -ForegroundColor Green
