@@ -40,15 +40,23 @@ function Invoke-Mpremote {
   $allArgs += $Mpremote.baseArgs
   $allArgs += $Args
 
-  if ($IgnoreErrors) {
-    try {
-      & $Mpremote.exe @allArgs | Out-Host
-    } catch {
-      Write-Host "Ignoring mpremote error: $($_.Exception.Message)" -ForegroundColor Yellow
-    }
-  } else {
-    & $Mpremote.exe @allArgs | Out-Host
+  & $Mpremote.exe @allArgs | Out-Host
+  $exitCode = $LASTEXITCODE
+
+  if ($null -eq $exitCode) {
+    $exitCode = 0
   }
+
+  if ($exitCode -ne 0) {
+    $argString = ($Args -join " ")
+    if ($IgnoreErrors) {
+      Write-Host "Ignoring mpremote exit code $exitCode for: $argString" -ForegroundColor Yellow
+      return $false
+    }
+    throw "mpremote failed (exit $exitCode): $argString"
+  }
+
+  return $true
 }
 
 if (-not (Test-Path -LiteralPath $Uf2)) {
@@ -61,6 +69,13 @@ if (-not (Test-Path -LiteralPath $IndexJson)) {
 $uf2Path = (Resolve-Path -LiteralPath $Uf2).Path
 $indexPath = (Resolve-Path -LiteralPath $IndexJson).Path
 $targetName = "$ShuttleId.json"
+
+if ($Port -eq "auto") {
+  Write-Host "Warning: -Port auto may select different devices if multiple serial targets are present." -ForegroundColor Yellow
+  Write-Host "Recommended: provide explicit -Port COMx for production provisioning." -ForegroundColor Yellow
+  $mp = Resolve-Mpremote
+  Invoke-Mpremote -Mpremote $mp -Args @("connect", "list")
+}
 
 if (-not $SkipFlash) {
   Write-Host "Step 1/2: Flash UF2 to board" -ForegroundColor Cyan
@@ -90,12 +105,12 @@ $mp = Resolve-Mpremote
 Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "fs", "mkdir", ":/shuttles") -IgnoreErrors
 Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "fs", "cp", $indexPath, ":/shuttles/$targetName")
 Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "fs", "ls", ":/shuttles")
-Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "exec", "import os; print('exists:', '$targetName' in os.listdir('/shuttles'))")
+Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "exec", "import os; assert '$targetName' in os.listdir('/shuttles'); print('exists:', True)")
 Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "reset")
 
 Write-Host "Running post-reset verification sequence..." -ForegroundColor Cyan
 Start-Sleep -Seconds 2
-Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "exec", "import os; print('post_reset_exists:', '$targetName' in os.listdir('/shuttles'))")
+Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "exec", "import os; assert '$targetName' in os.listdir('/shuttles'); print('post_reset_exists:', True)")
 Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "exec", "from ttboard.demoboard import DemoBoard; tt=DemoBoard.get(); print('detected_shuttle:', tt.shuttle.run)")
 
 if (-not $SkipFactoryCheck) {
