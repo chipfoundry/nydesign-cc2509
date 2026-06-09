@@ -69,7 +69,7 @@ if (-not (Test-Path -LiteralPath $IndexJson)) {
 $uf2Path = (Resolve-Path -LiteralPath $Uf2).Path
 $indexPath = (Resolve-Path -LiteralPath $IndexJson).Path
 $targetName = "$ShuttleId.json"
-$remoteTarget = (":/shuttles/$targetName" -replace '\\', '/')
+$remoteTarget = ":/shuttles/$targetName"
 $cleanupTempIndex = $false
 $indexPathForMpremote = $IndexJson
 
@@ -117,7 +117,6 @@ if (-not $SkipFlash) {
 Write-Host "Step 2/2: Copy shuttle index via mpremote" -ForegroundColor Cyan
 $mp = Resolve-Mpremote
 
-Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "fs", "mkdir", ":/shuttles") -IgnoreErrors
 Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "fs", "cp", $indexPathForMpremote, $remoteTarget)
 Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "fs", "ls", ":/shuttles")
 Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "exec", "import os; assert '$targetName' in os.listdir('/shuttles'); print('exists:', True)")
