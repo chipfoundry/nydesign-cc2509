@@ -3,7 +3,8 @@ param(
   [string]$IndexJson = ".\ttsky25b_for_sdk204.json",
   [string]$ShuttleId = "ttsky25b",
   [string]$Port = "auto",
-  [switch]$SkipFlash
+  [switch]$SkipFlash,
+  [switch]$SkipFactoryCheck
 )
 
 Set-StrictMode -Version Latest
@@ -96,6 +97,18 @@ Write-Host "Running post-reset verification sequence..." -ForegroundColor Cyan
 Start-Sleep -Seconds 2
 Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "exec", "import os; print('post_reset_exists:', '$targetName' in os.listdir('/shuttles'))")
 Invoke-Mpremote -Mpremote $mp -Args @("connect", $Port, "exec", "from ttboard.demoboard import DemoBoard; tt=DemoBoard.get(); print('detected_shuttle:', tt.shuttle.run)")
+
+if (-not $SkipFactoryCheck) {
+  Write-Host "Running factory counter final check..." -ForegroundColor Cyan
+  Invoke-Mpremote -Mpremote $mp -Args @(
+    "connect",
+    $Port,
+    "exec",
+    "from ttboard.demoboard import DemoBoard; from ttboard.mode import RPMode; import ttboard.util.platform as p; tt=DemoBoard.get(); tt.mode=RPMode.ASIC_RP_CONTROL; tt.shuttle.reset_and_clock_mux(1); tt.clock_project_stop(); tt.reset_project(True); p.write_ui_in_byte(0x01); tt.reset_project(False); tt.clock_project_once(); c1=p.read_uo_out_byte(); tt.clock_project_once(); c2=p.read_uo_out_byte(); print('factory_counter_c1:', c1); print('factory_counter_c2:', c2); assert ((c2-c1)&0xff)==1, (c1,c2); print('factory_counter_check: PASS')"
+  )
+} else {
+  Write-Host "Skipping factory counter final check (--SkipFactoryCheck)." -ForegroundColor Yellow
+}
 
 Write-Host "Provisioning complete." -ForegroundColor Green
 Write-Host "UF2: $uf2Path"
