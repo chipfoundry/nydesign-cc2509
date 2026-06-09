@@ -73,8 +73,11 @@ $uf2Path = (Resolve-Path -LiteralPath $Uf2).Path
 $indexPath = (Resolve-Path -LiteralPath $IndexJson).Path
 $targetName = "$ShuttleId.json"
 $remoteTarget = ":/shuttles/$targetName"
+$remoteTargetBin = "$remoteTarget.bin"
 $cleanupTempIndex = $false
 $indexPathForMpremote = $IndexJson
+$indexBinPathForMpremote = $null
+$copyBinFirst = $false
 
 # mpremote path parsing treats ":" specially for remote paths. On Windows,
 # absolute paths like C:\... can confuse fs cp. Use a local relative path.
@@ -85,6 +88,22 @@ if ($indexPathForMpremote -match '^[A-Za-z]:\\') {
   if (-not (Test-Path -LiteralPath $leafAbs) -or ((Resolve-Path -LiteralPath $leafAbs).Path -ne $indexPath)) {
     Copy-Item -LiteralPath $indexPath -Destination $leafAbs -Force
     $cleanupTempIndex = $true
+  }
+}
+
+# Prefer serialized .bin shuttle index when available, to reduce memory usage on RP2040.
+$indexBinPath = "$indexPath.bin"
+if (Test-Path -LiteralPath $indexBinPath) {
+  $copyBinFirst = $true
+  $indexBinPathForMpremote = $indexBinPath
+  if ($indexBinPathForMpremote -match '^[A-Za-z]:\\') {
+    $leafBin = [System.IO.Path]::GetFileName($indexBinPath)
+    $indexBinPathForMpremote = ".\$leafBin"
+    $leafBinAbs = (Join-Path (Get-Location) $leafBin)
+    if (-not (Test-Path -LiteralPath $leafBinAbs) -or ((Resolve-Path -LiteralPath $leafBinAbs).Path -ne $indexBinPath)) {
+      Copy-Item -LiteralPath $indexBinPath -Destination $leafBinAbs -Force
+      $cleanupTempIndex = $true
+    }
   }
 }
 
@@ -121,11 +140,20 @@ Write-Host "Step 2/2: Copy shuttle index via mpremote" -ForegroundColor Cyan
 $mp = Resolve-Mpremote
 Write-Host "Start copy" -ForegroundColor Cyan
 
+if ($copyBinFirst) {
+  Write-Host "Serialized index found, copying .json.bin first (preferred)." -ForegroundColor Cyan
+  Invoke-Mpremote -Mpremote $mp -CommandArgs @("connect", $Port, "fs", "cp", $indexBinPathForMpremote, $remoteTargetBin)
+  Write-Host "Binary copy finshed" -ForegroundColor Cyan
+}
+
 Invoke-Mpremote -Mpremote $mp -CommandArgs @("connect", $Port, "fs", "cp", $indexPathForMpremote, $remoteTarget)
 Write-Host "Copy finshed" -ForegroundColor Cyan
 Invoke-Mpremote -Mpremote $mp -CommandArgs @("connect", $Port, "fs", "ls", ":/shuttles")
 Write-Host "List finshed" -ForegroundColor Cyan
-Invoke-Mpremote -Mpremote $mp -CommandArgs @("connect", $Port, "exec", "import os; assert '$targetName' in os.listdir('/shuttles'); print('exists:', True)")
+if ($copyBinFirst) {
+  Invoke-Mpremote -Mpremote $mp -CommandArgs @("connect", $Port, "exec", "import os; assert '$targetName.bin' in os.listdir('/shuttles'); print('bin_exists:', True)")
+}
+Invoke-Mpremote -Mpremote $mp -CommandArgs @("connect", $Port, "exec", "import os; assert '$targetName' in os.listdir('/shuttles'); print('json_exists:', True)")
 Write-Host "Running post-copy verification sequence..." -ForegroundColor Cyan
 Invoke-Mpremote -Mpremote $mp -CommandArgs @("connect", $Port, "exec", "from ttboard.demoboard import DemoBoard; tt=DemoBoard.get(); print('detected_shuttle:', tt.shuttle.run)")
 
@@ -143,7 +171,10 @@ if (-not $SkipFactoryCheck) {
 
 Write-Host "Provisioning complete." -ForegroundColor Green
 Write-Host "UF2: $uf2Path"
-Write-Host "Index: $indexPath -> $remoteTarget"
+if ($copyBinFirst) {
+  Write-Host "Index bin: $indexBinPath -> $remoteTargetBin"
+}
+Write-Host "Index json: $indexPath -> $remoteTarget"
 
 if ($cleanupTempIndex) {
   Remove-Item -LiteralPath $indexPathForMpremote -Force -ErrorAction SilentlyContinue
