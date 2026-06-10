@@ -5,7 +5,7 @@ param(
   [string]$Port = "auto",
   [switch]$SkipFlash,
   [switch]$RunFactoryCheck,
-  [switch]$ConfigureFactoryMode3
+  [switch]$ConfigureFactoryMode3 = $true
 )
 
 Set-StrictMode -Version Latest
@@ -192,7 +192,7 @@ if ($ConfigureFactoryMode3) {
     "connect",
     $Port,
     "exec",
-    "from ttboard.demoboard import DemoBoard; from ttboard.mode import RPMode; import ttboard.util.platform as p; tt=DemoBoard.get(); tt.mode=RPMode.ASIC_RP_CONTROL; tt.shuttle.reset_and_clock_mux(1); tt.clock_project_stop(); p.write_ui_in_byte(0x01); tt.reset_project(False); print('factory_mode3_configured: PASS')"
+    "from ttboard.demoboard import DemoBoard; from ttboard.mode import RPMode; import ttboard.util.platform as p; tt=DemoBoard.get(); tt.mode=RPMode.ASIC_RP_CONTROL; tt.shuttle.reset_and_clock_mux(1); tt.clock_project_stop(); p.write_ui_in_byte(0x01); tt.reset_project(False); tt.clock_project_PWM(100); print('factory_mode3_configured: PASS (clock_hz=100)')"
   )
 }
 

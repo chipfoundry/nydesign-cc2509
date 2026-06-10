@@ -90,11 +90,14 @@ Optional parameters:
 ```powershell
 .\provision_board_windows.ps1 -Port COM5
 .\provision_board_windows.ps1 -SkipFlash
-.\provision_board_windows.ps1 -SkipFactoryCheck
+.\provision_board_windows.ps1 -RunFactoryCheck
+.\provision_board_windows.ps1 -ConfigureFactoryMode3:$false
 .\provision_board_windows.ps1 -IndexJson .\my_index.json -ShuttleId ci2511
 ```
 
-By default, the script also runs a final factory counter check (address `1`, `sel=1`) and asserts the counter increments by 1 across two clock pulses.
+By default, the script configures Factory Test mode 3 for manual verification (address `1`, `sel=1`) and starts the project clock at `100 Hz`.
+
+The final automated factory counter check is opt-in and only runs when `-RunFactoryCheck` is provided.
 
 ## Verify provisioning
 
